@@ -129,67 +129,73 @@ class _FriendListPageState extends State<FriendListPage> {
               ),
             );
           } else if (state is FriendsLoadingSuccessfulState) {
-            return ListView.separated(
-              padding: EdgeInsets.zero,
-              itemBuilder: (context, index) {
-                return InkWell(
-                  splashColor: themeColor.withOpacity(0.2),
-                  onTap: () {
-                    Navigator.of(context).push(
-                      PageRouteSlideTransition(
-                        child: ChatPage(
-                          chatGroupID: state.friends[index].chatGroupID,
-                          friendName: state.friends[index].name,
+            return RefreshIndicator(
+              onRefresh: () async {
+                BlocProvider.of<FriendsBloc>(context)
+                    .add(FriendsLoadingEvent());
+              },
+              child: ListView.separated(
+                padding: EdgeInsets.zero,
+                itemBuilder: (context, index) {
+                  return InkWell(
+                    splashColor: themeColor.withOpacity(0.2),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        PageRouteSlideTransition(
+                          child: ChatPage(
+                            chatGroupID: state.friends[index].chatGroupID,
+                            friendName: state.friends[index].name,
+                          ),
+                        ),
+                      );
+                    },
+                    child: ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: themeColor.withOpacity(0.2),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          state.friends[index].name[0],
+                          style: const TextStyle(
+                            color: Color(0xff21005D),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                    );
-                  },
-                  child: ListTile(
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: themeColor.withOpacity(0.2),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        state.friends[index].name[0],
+                      title: Text(
+                        state.friends[index].name,
                         style: const TextStyle(
-                          color: Color(0xff21005D),
                           fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      subtitle: Text(
+                        state.friends[index].lastMessage == ''
+                            ? "You and ${state.friends[index].name} have just become friends"
+                            : state.friends[index].lastMessage,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xff49454F),
                         ),
                       ),
                     ),
-                    title: Text(
-                      state.friends[index].name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    subtitle: Text(
-                      state.friends[index].lastMessage == ''
-                          ? "You and ${state.friends[index].name} have just become friends"
-                          : state.friends[index].lastMessage,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xff49454F),
-                      ),
-                    ),
-                  ),
-                );
-              },
-              separatorBuilder: (context, index) {
-                return const Divider(
-                  height: 0,
-                );
-              },
-              itemCount: state.friends.length,
+                  );
+                },
+                separatorBuilder: (context, index) {
+                  return const Divider(
+                    height: 0,
+                  );
+                },
+                itemCount: state.friends.length,
+              ),
             );
           } else {
             return const Center(
@@ -237,7 +243,7 @@ class MySearchDelegate extends SearchDelegate {
 
   @override
   Widget buildResults(BuildContext context) {
-    return Center();
+    return const Center();
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:chat_app/des_algorithm.dart';
 import 'package:chat_app/models/message_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
@@ -30,17 +31,25 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         .collection('Message')
         .orderBy('sendingTime', descending: true)
         .snapshots()
-        .listen((event) async {
+        .listen((snapshotEvent) async {
       List<MessageModel> mess = [];
-      for (var ele in event.docs) {
-        Timestamp temp = ele.get('sendingTime');
-        String id = ele.get('fromUser');
-        mess.add(MessageModel(
-          id: ele.id,
-          message: ele.get('message'),
-          sendingTime: temp.toDate(),
-          sendByMe: id == uid,
-        ));
+
+      if (snapshotEvent.docs.isNotEmpty) {
+        for (var ele in snapshotEvent.docs) {
+          Timestamp temp = ele.get('sendingTime');
+          String id = ele.get('fromUser');
+          String ciphertext = ele.get('message');
+
+          String plaintext =
+              await DESAlgorthm.decrypt(ciphertext, event.chatGroupID);
+
+          mess.add(MessageModel(
+            id: ele.id,
+            message: plaintext,
+            sendingTime: temp.toDate(),
+            sendByMe: id == uid,
+          ));
+        }
       }
 
       add(ChatUpdateEvent(newMess: mess));
@@ -51,16 +60,25 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       ChatSendMessageEvent event, Emitter<ChatState> emit) async {
     String uid = FirebaseAuth.instance.currentUser!.uid;
 
+    String encryptedMess =
+        await DESAlgorthm.encrypt(event.message, event.groupID);
+
     await FirebaseFirestore.instance
         .collection('ChatGroup')
         .doc(event.groupID)
         .collection('Message')
         .add({
-      'message': event.message,
+      'message': encryptedMess,
       'fromUser': uid,
       'sendingTime': DateTime.now(),
     }).then((value) async {
-      //Set last message here
+      await FirebaseFirestore.instance
+          .collection('ChatGroup')
+          .doc(event.groupID)
+          .set(
+        {'lastMessage': encryptedMess},
+        SetOptions(merge: true),
+      );
     });
   }
 

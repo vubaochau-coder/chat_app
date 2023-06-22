@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:chat_app/des_algorithm.dart';
 import 'package:chat_app/models/friend_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
@@ -46,6 +47,10 @@ class FriendsBloc extends Bloc<FriendsEvent, FriendsState> {
             .get();
         if (groupchatQuery.exists) {
           lastMessage = (groupchatQuery.data() as Map)['lastMessage'] ?? '';
+        }
+
+        if (lastMessage != '') {
+          lastMessage = await DESAlgorthm.decrypt(lastMessage, groupID);
         }
 
         tempList.add(FriendModel(
